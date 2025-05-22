@@ -30,7 +30,10 @@ impl RobotSimulation {
 		let state = RobotState::Idle;
 		let steps_since_idle = 0;
 
-		debug.messages.push("Robot Initialized".to_string());
+		#[cfg(debug_assertions)]
+		{
+			debug.messages.push("Robot Initialized".to_string());
+		}
 		(
 			Self {
 				instruction_queue,
@@ -70,9 +73,13 @@ impl RobotSimulation {
 		} else {
 			self.steps_since_idle += 1;
 		}
-		debug
-			.messages
-			.push(format!("Steps since last idle: {}", self.steps_since_idle));
+
+		#[cfg(debug_assertions)]
+		{
+			debug
+				.messages
+				.push(format!("Steps since last idle: {}", self.steps_since_idle));
+		}
 
 		match &mut self.state {
 			RobotState::Idle => unreachable!(),
@@ -113,38 +120,41 @@ impl RobotSimulation {
 						.set(-error_angle * correction_factor + power);
 				}
 
-				let distance_threshold = 0.1;
+				let distance_threshold = 0.05;
 				if distance < distance_threshold {
 					points.pop_front();
 				};
 
-				debug
-					.renderables
-					.push(line((x, y), (bot_x, bot_y), 4.0, (255, 0, 0)));
-				debug
-					.messages
-					.push(format!("Robot Position: ({:.3}, {:.3})", bot_x, bot_y));
-				debug
-					.messages
-					.push(format!("Robot Angle: {:.1}", bot_angle * 180.0 / PI));
-				debug
-					.messages
-					.push(format!("Target point: ({:.2}, {:.2})", x, y));
-				debug
-					.messages
-					.push(format!("Distance to target: {distance:.4}"));
-				debug.messages.push(format!(
-					"Angle error to target: {:.1}",
-					error_angle * 180.0 / PI
-				));
-				debug.messages.push(format!(
-					"Left Motor Power: {:+5.2}",
-					params.motor_left.get()
-				));
-				debug.messages.push(format!(
-					"Right Motor Power: {:+5.2}",
-					params.motor_right.get()
-				));
+				#[cfg(debug_assertions)]
+				{
+					debug
+						.renderables
+						.push(line((x, y), (bot_x, bot_y), 4.0, (255, 0, 0)));
+					debug
+						.messages
+						.push(format!("Robot Position: ({:.3}, {:.3})", bot_x, bot_y));
+					debug
+						.messages
+						.push(format!("Robot Angle: {:.1}", bot_angle * 180.0 / PI));
+					debug
+						.messages
+						.push(format!("Target point: ({:.2}, {:.2})", x, y));
+					debug
+						.messages
+						.push(format!("Distance to target: {distance:.4}"));
+					debug.messages.push(format!(
+						"Angle error to target: {:.1}",
+						error_angle * 180.0 / PI
+					));
+					debug.messages.push(format!(
+						"Left Motor Power: {:+5.2}",
+						params.motor_left.get()
+					));
+					debug.messages.push(format!(
+						"Right Motor Power: {:+5.2}",
+						params.motor_right.get()
+					));
+				}
 			}
 		};
 

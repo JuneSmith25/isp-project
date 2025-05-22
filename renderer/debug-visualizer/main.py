@@ -40,8 +40,6 @@ sim_dt = sim_output.delta_time
 states = sim_output.states
 blade_radius = sim_output.blade_radius
 
-print(blade_radius)
-
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 960
 ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT
