@@ -15,7 +15,7 @@ class Root(ClickableSurface):
         button_fg = (235, 219, 178)  # #EBDBB2
         button_bg = (80, 73, 69)     # #504945
         font = pg.font.Font(pg.font.get_default_font(), 32)
-        button_child = (lambda size, text, message: Child(
+        button = (lambda size, text, message: Child(
             EventEmitterButton(
                 size,
                 button_bg, button_fg,
@@ -23,17 +23,18 @@ class Root(ClickableSurface):
             (0, 0)))
 
         self.top_right_buttons: list[Child] = [
-                button_child(trb_size, "Pop instruction", message.PopInstruction()),
-                button_child(trb_size, "Line", message.AddLine()),
-                button_child(trb_size, "Curve", message.AddCurve()),
-                button_child(trb_size, "Blade off", message.BladeOff()),
-                button_child(trb_size, "Blade on", message.BladeOn()),
+                button(trb_size, "Pop instruction", message.PopInstruction),
+                button(trb_size, "Line", message.AddLine),
+                button(trb_size, "Curve", message.AddCurve),
+                button(trb_size, "Blade off", message.BladeOff),
+                button(trb_size, "Blade on", message.BladeOn),
                 ]
 
         brb_size = (300, 75)
         self.bottom_right_buttons: list[Child] = [
-                button_child(brb_size, "Export", message.Export()),
-                button_child(brb_size, "Import", message.Import())
+                button(brb_size, "Export", message.Export),
+                button(brb_size, "Import", message.Import),
+                button(brb_size, "Simulate!", message.Simulate)
                 ]
 
         self.editor_frame = Child(EditorFrame((0, 0), model), (0, 0))
@@ -120,7 +121,7 @@ class EventEmitterButton(ClickableSurface):
 
     def on_raise(self, pos, button):
         if button == 1:
-            self.recv.receive(self.message)
+            self.recv.receive(self.message())
 
     def on_move(self, pos: tuple[int, int]):
         pass
@@ -142,9 +143,7 @@ class EventEmitterButton(ClickableSurface):
         return self.surface
 
 
-
-
-if __name__ == "__main__":
+def main():
     pg.init()
     screen = pg.display.set_mode((1600, 900))
 
@@ -168,3 +167,7 @@ if __name__ == "__main__":
 
         screen.blit(root.update(), (0, 0))
         pg.display.update()
+
+
+if __name__ == "__main__":
+    main()

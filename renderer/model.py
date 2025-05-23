@@ -1,11 +1,15 @@
+import os
 import message
 from instruction import Line, CubicBezier, BladeOn, BladeOff, \
     to_json_value, from_json_value
 
-from json import dump, load
+from json import dump, dumps, load, loads
 from math import tau
 
 from tkinter.filedialog import askopenfilename, asksaveasfilename
+
+from subprocess import Popen, PIPE
+
 
 blade_radius = 0.25
 
@@ -24,12 +28,12 @@ class InstructionBuilderModel:
             if len(self.instructions) > 0:
                 self.instructions.pop()
 
-        if isinstance(m, message.AddLine):
+        elif isinstance(m, message.AddLine):
             dx = -0.5 if end[0] > 0 else 0.5
             dy = -0.5 if end[1] > 0 else 0.5
             self.instructions.append(Line(end, add(end, (dx, dy))))
 
-        if isinstance(m, message.AddCurve):
+        elif isinstance(m, message.AddCurve):
             dx = -0.25 if end[0] > 0 else 0.25
             dy = -0.25 if end[1] > 0 else 0.25
             self.instructions.append(CubicBezier(end,
@@ -37,13 +41,13 @@ class InstructionBuilderModel:
                                                  add(end, (dx * 2, -dy)),
                                                  add(end, (dx * 4, 0))))
 
-        if isinstance(m, message.BladeOn):
+        elif isinstance(m, message.BladeOn):
             self.instructions.append(BladeOn())
 
-        if isinstance(m, message.BladeOff):
+        elif isinstance(m, message.BladeOff):
             self.instructions.append(BladeOff())
 
-        if isinstance(m, message.UpdatePoint):
+        elif isinstance(m, message.UpdatePoint):
             length = len(self.instructions)
             if length < 1:
                 return
@@ -63,11 +67,12 @@ class InstructionBuilderModel:
                 if m.index == 3:
                     selected.p3 = m.pos
 
-        if isinstance(m, message.Export):
+        elif isinstance(m, message.Export):
             self.export_instructions()
-
-        if isinstance(m, message.Import):
+        elif isinstance(m, message.Import):
             self.import_instructions()
+        elif isinstance(m, message.Simulate):
+            self.run_simulation()
 
     def end_point(self) -> tuple[int, int]:
         i = len(self.instructions) - 1
@@ -111,3 +116,13 @@ class InstructionBuilderModel:
         if "instructions" in obj.keys():
             obj_list = obj["instructions"]
             self.instructions = [from_json_value(o) for o in obj_list]
+
+    def run_simulation(self):
+        sim_input = dumps(self.sim_dict())
+        path = os.path.dirname(os.path.realpath(__file__))+"/.isp_auto_output"
+        cmd = ['isp-sim', '--output', path]
+        calculations = Popen(cmd, stdin=PIPE)
+        calculations.communicate(sim_input.encode())
+        cmd = ['python', 'visualizer.py']
+        p = Popen(cmd)
+        p.wait()

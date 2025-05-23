@@ -26,14 +26,13 @@ class UpdatePoint:
         self.pos = pos
 
 
-class BeginSimulation:
-    def __init__(self, bezier_steps=10):
-        self.bezier_steps = bezier_steps
-
-
 class Export:
     pass
 
 
 class Import:
+    pass
+
+
+class Simulate:
     pass

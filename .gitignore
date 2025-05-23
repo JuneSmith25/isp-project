@@ -1,6 +1,7 @@
 
 simulation/target/
 simulation/tests/
-simulation/paths/
 
 renderer/__pycache__/
+renderer/paths/
+renderer/.isp_auto_output

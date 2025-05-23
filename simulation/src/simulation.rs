@@ -1,8 +1,8 @@
+#[allow(unused_imports)]
+use crate::debug::renderables::line;
 use crate::{
-	debug::{renderables::line, DebugInfo},
-	signed_angle_difference,
-	util::cubic_bezier,
-	RobotInstruction as RI, RobotParameters, Step,
+	debug::DebugInfo, signed_angle_difference, util::cubic_bezier, RobotInstruction as RI,
+	RobotParameters, Step,
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, f64::consts::PI};
@@ -25,7 +25,9 @@ impl RobotSimulation {
 	const BEZIER_STEPS: usize = 100;
 
 	pub fn initialize(instructions: &[RI]) -> (Self, DebugInfo) {
+		#[allow(unused_mut)]
 		let mut debug = DebugInfo::default();
+
 		let instruction_queue = VecDeque::from_iter(instructions.iter().cloned());
 		let state = RobotState::Idle;
 		let steps_since_idle = 0;
