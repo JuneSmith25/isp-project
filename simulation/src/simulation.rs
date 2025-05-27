@@ -25,7 +25,7 @@ impl RobotSimulation {
 	const BEZIER_STEPS: usize = 100;
 
 	pub fn initialize(instructions: &[RI]) -> (Self, DebugInfo) {
-		#[allow(unused_mut)]
+        #[allow(unused_mut)]
 		let mut debug = DebugInfo::default();
 
 		let instruction_queue = VecDeque::from_iter(instructions.iter().cloned());
@@ -47,6 +47,7 @@ impl RobotSimulation {
 	}
 
 	pub fn step(&mut self, _delta_time: std::time::Duration, params: &RobotParameters) -> Step {
+        #[allow(unused_mut)]
 		let mut debug = DebugInfo::default();
 
 		if let RobotState::Idle = self.state {
@@ -68,6 +69,7 @@ impl RobotSimulation {
 						.collect(),
 				),
 				None => {
+					#[cfg(debug_assertions)]
 					debug.messages.push("No instructions remaining".to_string());
 					return Step { end: true, debug };
 				}

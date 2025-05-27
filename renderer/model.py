@@ -119,10 +119,11 @@ class InstructionBuilderModel:
 
     def run_simulation(self):
         sim_input = dumps(self.sim_dict())
-        path = os.path.dirname(os.path.realpath(__file__))+"/.isp_auto_output"
+        dir = os.path.dirname(os.path.realpath(__file__))
+        path = f"{dir}/.isp_auto_output"
         cmd = ['isp-sim', '--output', path]
         calculations = Popen(cmd, stdin=PIPE)
         calculations.communicate(sim_input.encode())
-        cmd = ['python', 'visualizer.py']
+        cmd = ['python', f'{dir}/visualizer.py']
         p = Popen(cmd)
         p.wait()

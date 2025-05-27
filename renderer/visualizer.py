@@ -57,7 +57,8 @@ if __name__ == '__main__':
     pg.init()
     screen = pg.display.set_mode((1280, 960))
 
-    path = os.path.dirname(os.path.realpath(__file__)) + "/.isp_auto_output"
+    dir = os.path.dirname(os.path.realpath(__file__)) 
+    path = dir + "/.isp_auto_output"
     with open(path, 'r') as f:
         d = json.load(f)
 
@@ -76,14 +77,15 @@ if __name__ == '__main__':
     WORLD_HEIGHT = WORLD_WIDTH
 
     font = pg.font.Font(pg.font.get_default_font(), floor(SCREEN_HEIGHT / 40))
-    robot_sprite = pg.image.load("robotDS.png")
+    robot_sprite_path = f"{dir}/robotDS.png"
+    robot_sprite = pg.image.load(robot_sprite_path)
     robot_sprite_size = (sim_output.wheel_distance * WORLD_SCALE,
                          sim_output.wheel_distance * WORLD_SCALE
                          * robot_sprite.get_height() / robot_sprite.get_width())
     robot_sprite = pg.transform.smoothscale(robot_sprite, robot_sprite_size)
 
     grass_size = 2
-    grass_texture_path = "grass.png"
+    grass_texture_path = f"{dir}/grass.png"
     grass_texture = pg.image.load(grass_texture_path)
     grass_texture = pg.transform.smoothscale(
             grass_texture, (WORLD_SCALE * grass_size, WORLD_SCALE * grass_size))
