@@ -1,5 +1,6 @@
 import os
 import message
+import pygame as pg
 from instruction import Line, CubicBezier, BladeOn, BladeOff, \
     to_json_value, from_json_value
 
@@ -17,6 +18,7 @@ blade_radius = 0.25
 class InstructionBuilderModel:
     def __init__(self):
         self.instructions = []
+        self.overlay = None
 
     def receive(self, m):
         end = self.end_point()
@@ -73,6 +75,8 @@ class InstructionBuilderModel:
             self.import_instructions()
         elif isinstance(m, message.Simulate):
             self.run_simulation()
+        elif isinstance(m, message.AddOverlay):
+            self.add_overlay()
 
     def end_point(self) -> tuple[int, int]:
         i = len(self.instructions) - 1
@@ -94,13 +98,14 @@ class InstructionBuilderModel:
         obj['sim_length'] = "Indefinite"
         obj['delta_time'] = {"secs": 0, "nanos": 1000000}
         obj['instructions'] = [to_json_value(i) for i in self.instructions]
+        obj['dummy'] = 'dummy'
         return obj
 
     def export_instructions(self):
-        result = asksaveasfilename()
-        if not isinstance(result, str):
+        filepath = asksaveasfilename()
+        if not isinstance(filepath, str):
             return
-        filepath = str(result)
+        filepath = str(filepath)
         obj = self.sim_dict()
         with open(filepath, "w") as f:
             dump(obj, f)
@@ -127,3 +132,13 @@ class InstructionBuilderModel:
         cmd = ['python', f'{dir}/visualizer.py']
         p = Popen(cmd)
         p.wait()
+
+    def add_overlay(self):
+        if self.overlay is not None:
+            self.overlay = None
+        else:
+            filepath = askopenfilename()
+            if not isinstance(filepath, str):
+                return
+
+            self.overlay = pg.image.load(filepath)

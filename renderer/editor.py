@@ -49,7 +49,7 @@ class EditorFrame(ClickableSurface):
         instructions = self.model.instructions
         length = len(instructions)
 
-        bezier_steps = 50
+        bezier_steps = 500
 
         blade_on = False
         for i in range(length - 1):
@@ -210,6 +210,13 @@ class EditorFrame(ClickableSurface):
         text = self.font.render("Blade ON" if blade_on else "Blade OFF",
                                 True, self.fg)
         self.text_surface.blit(text, (0, 0))
+
+        if self.model.overlay is not None:
+            if self.overlay is None:
+                self.overlay = pg.transform.smoothscale_by(self.model.overlay, 100.0 / 96.0)
+            self.surface.blit(self.overlay, self.screencoords(0, 0))
+        else:
+            self.overlay = None
 
         self.surface.blit(self.cut_surface, (0, 0))
         self.surface.blit(self.nodes_surface, (0, 0))

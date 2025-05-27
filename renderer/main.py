@@ -34,7 +34,8 @@ class Root(ClickableSurface):
         self.bottom_right_buttons: list[Child] = [
                 button(brb_size, "Export", message.Export),
                 button(brb_size, "Import", message.Import),
-                button(brb_size, "Simulate!", message.Simulate)
+                button(brb_size, "Add Map", message.AddOverlay),
+                button(brb_size, "Simulate", message.Simulate)
                 ]
 
         self.editor_frame = Child(EditorFrame((0, 0), model), (0, 0))
@@ -145,7 +146,7 @@ class EventEmitterButton(ClickableSurface):
 
 def main():
     pg.init()
-    screen = pg.display.set_mode((1600, 900))
+    screen: pg.Surface = pg.display.set_mode((1600, 900))
 
     screen_size = (screen.get_width(), screen.get_height())
     root = Root(screen_size, InstructionBuilderModel())

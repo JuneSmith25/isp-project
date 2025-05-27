@@ -36,3 +36,7 @@ class Import:
 
 class Simulate:
     pass
+
+
+class AddOverlay:
+    pass
