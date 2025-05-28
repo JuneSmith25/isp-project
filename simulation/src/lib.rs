@@ -14,6 +14,7 @@ use std::{cell::Cell, fmt::Debug, time::Duration};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SimOutput {
 	pub states: Vec<SimulationState>,
+    pub overlay_path: Option<String>,
 	pub delta_time: Duration,
 	/// Unit: meters
 	pub wheel_distance: f64,
@@ -28,6 +29,7 @@ pub struct SimOutput {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SimInput {
 	pub instructions: Vec<RobotInstruction>,
+    pub overlay_path: Option<String>,
 	pub sim_length: SimulationLength,
 	pub delta_time: Duration,
 	/// Unit: meters
@@ -71,6 +73,7 @@ pub fn run_simulation(
 		wheel_radius,
 		max_motor_speed,
         blade_radius,
+        overlay_path
 	}: SimInput,
 ) -> SimOutput {
 	let (mut sim, debug) = RobotSimulation::initialize(&instructions);
@@ -161,5 +164,6 @@ pub fn run_simulation(
 		wheel_radius,
 		max_motor_speed,
         blade_radius,
+        overlay_path
 	}
 }

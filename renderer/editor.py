@@ -213,7 +213,9 @@ class EditorFrame(ClickableSurface):
 
         if self.model.overlay is not None:
             if self.overlay is None:
-                self.overlay = pg.transform.smoothscale_by(self.model.overlay, 100.0 / 96.0)
+                self.overlay = pg.transform.smoothscale_by(
+                        self.model.overlay,
+                        self.world_scale / 96.0)
             self.surface.blit(self.overlay, self.screencoords(0, 0))
         else:
             self.overlay = None
@@ -231,13 +233,13 @@ class EditorFrame(ClickableSurface):
             selected = instructions[length - 1]
             if isinstance(selected, Line):
                 dist = distance_squared(pos, self.screencoords(selected.end))
-                if dist < self.point_radius ** 2:
+                if dist < self.point_radius ** 3.5:
                     self.dragging = 1
             elif isinstance(selected, CubicBezier):
                 ps = [selected.p1, selected.p2, selected.p3]
                 for i in range(3):
                     dist = distance_squared(pos, self.screencoords(ps[i]))
-                    if dist < self.point_radius ** 2:
+                    if dist < self.point_radius ** 3.5:
                         self.dragging = i + 1
 
         if self.dragging == -1:

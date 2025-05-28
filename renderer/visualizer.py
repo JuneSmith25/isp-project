@@ -52,12 +52,40 @@ class SimOutput:
         self.blade_radius: float = obj["blade_radius"]
 
 
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 960
+ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT
+
+WORLD_SCALE = SCREEN_HEIGHT / 10  # pixels per meter
+
+WORLD_WIDTH = SCREEN_WIDTH * 5
+WORLD_HEIGHT = WORLD_WIDTH
+
+camera_pos = [0, 0]
+
+def screencoords(x, y=None):
+    if isinstance(x, tuple) and y is None:
+        return screencoords(x[0], x[1])
+
+    return ((x - camera_pos[0]) * WORLD_SCALE + SCREEN_WIDTH / 2,
+            -(y - camera_pos[1]) * WORLD_SCALE + SCREEN_HEIGHT / 2)
+
+def worldcoords(x, y=None):
+    if isinstance(x, tuple) and y is None:
+        return worldcoords(x[0], x[1])
+
+    cam_x, cam_y = camera_pos
+    return (((x - SCREEN_WIDTH / 2) / WORLD_SCALE) + camera_pos[0],
+            ((y - SCREEN_HEIGHT / 2) / -WORLD_SCALE) + camera_pos[1])
+
 if __name__ == '__main__':
 
     pg.init()
-    screen = pg.display.set_mode((1280, 960))
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    dir = os.path.dirname(os.path.realpath(__file__)) 
+    drag_anchor = None
+
+    dir = os.path.dirname(os.path.realpath(__file__))
     path = dir + "/.isp_auto_output"
     with open(path, 'r') as f:
         d = json.load(f)
@@ -67,14 +95,6 @@ if __name__ == '__main__':
     states = sim_output.states
     blade_radius = sim_output.blade_radius
 
-    SCREEN_WIDTH = screen.get_width()
-    SCREEN_HEIGHT = screen.get_height()
-    ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT
-
-    WORLD_SCALE = SCREEN_HEIGHT / 10  # pixels per meter
-
-    WORLD_WIDTH = SCREEN_WIDTH * 5
-    WORLD_HEIGHT = WORLD_WIDTH
 
     font = pg.font.Font(pg.font.get_default_font(), floor(SCREEN_HEIGHT / 40))
     robot_sprite_path = f"{dir}/robotDS.png"
@@ -90,35 +110,26 @@ if __name__ == '__main__':
     grass_texture = pg.transform.smoothscale(
             grass_texture, (WORLD_SCALE * grass_size, WORLD_SCALE * grass_size))
 
-    grass_surface = pg.Surface((WORLD_WIDTH, WORLD_HEIGHT))
-    for y in range(ceil(WORLD_HEIGHT / grass_texture.get_height())):
-        for x in range(ceil(WORLD_WIDTH / grass_texture.get_width())):
-            grass_surface.blit(grass_texture,
-                               (x * grass_texture.get_width(),
-                                y * grass_texture.get_height()))
-
-    camera = pg.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
-    camera_surface = pg.Surface(camera.size)
-
-    world_surface = pg.Surface((WORLD_WIDTH, WORLD_HEIGHT))
-    camera.center = (WORLD_WIDTH / 2, WORLD_HEIGHT / 2)
+    world_surface = screen
 
     clock = pg.time.Clock()
     world_timer = 0.0
     frame_by_frame = True
     frame_skip = 1
 
-    def worldcoords(x, y=None):
-        if isinstance(x, tuple) and y is None:
-            return worldcoords(x[0], x[1])
-        return (x * WORLD_SCALE + WORLD_WIDTH / 2,
-                -y * WORLD_SCALE + WORLD_HEIGHT / 2)
 
     quit = False
     while not quit:
         screen.fill((0, 0, 0))
-        camera_surface.fill((0, 0, 0))
-        world_surface.blit(grass_surface, (0, 0))
+
+        grass_width = grass_texture.get_width()
+        grass_height = grass_texture.get_height()
+        for row in range(-1, ceil(SCREEN_WIDTH / grass_width) + 2):
+            for col in range(-1, ceil(SCREEN_HEIGHT / grass_height) + 2):
+                ox, oy = screencoords(0, 0)
+                ox, oy = ox % grass_width, oy % grass_height
+                gx, gy = ox + col * grass_width, oy + row * grass_height
+                world_surface.blit(grass_texture, (gx, gy))
 
         pressed = pg.key.get_pressed()
 
@@ -145,82 +156,71 @@ if __name__ == '__main__':
                     frame_skip = max(frame_skip - 1 - 9*pressed[pg.K_LSHIFT], 1)
                 if event.key == pg.K_EQUALS:
                     frame_skip = min(frame_skip + 1 + 9*pressed[pg.K_LSHIFT], 100)
+            if event.type == pg.MOUSEBUTTONDOWN:
+                drag_anchor = worldcoords(event.pos)
+            if event.type == pg.MOUSEBUTTONUP:
+                drag_anchor = None
 
         state_index = floor(world_timer / sim_dt)
 
         debug_messages = []
 
         if state_index < len(states):
-
             for i in range(state_index):
                 state = states[i]
                 x, y = state.robot_x, state.robot_y
                 if state.blade_on:
                     pg.draw.circle(world_surface,
                                    (48, 49, 31),
-                                   worldcoords(x, y),
+                                   screencoords(x, y),
                                    blade_radius * WORLD_SCALE)
 
             state: SimState = states[state_index]
             radians = state.robot_theta
             degrees = radians * 180 / PI
             robot = pg.transform.rotate(robot_sprite, degrees)
-
-            blit_x, blit_y = worldcoords(state.robot_x, state.robot_y)
-            world_surface.blit(robot,
-                               (blit_x - robot.get_width() / 2,
-                                blit_y - robot.get_height() / 2))
+            bx, by = screencoords(state.robot_x, state.robot_y)
+            world_surface.blit(robot, (bx - robot.get_width() / 2,
+                                       by - robot.get_height() / 2))
             debug = state.debug
             for r in debug.renderables:
                 if isinstance(r, Circle):
                     circle: Circle = r
                     pg.draw.circle(world_surface,
                                    circle.color,
-                                   worldcoords(circle.center),
+                                   screencoords(circle.center),
                                    circle.radius * WORLD_SCALE)
                 if isinstance(r, Line):
                     line: Line = r
                     pg.draw.line(world_surface, line.color,
-                                 worldcoords(line.p1),
-                                 worldcoords(line.p2),
+                                 screencoords(line.p1),
+                                 screencoords(line.p2),
                                  line.width)
             debug_messages += debug.messages
         else:
             frame_by_frame = True
-            world_timer -= sim_dt
+            over_by = state_index - len(states)
+            world_timer -= (sim_dt * over_by * 1.8)
 
         if pressed[pg.K_a]:
-            camera.x -= camera.width * 0.5 * delta_time
+            camera_pos[0] -= 3.0 * delta_time
         if pressed[pg.K_d]:
-            camera.x += camera.width * 0.5 * delta_time
+            camera_pos[0] += 3.0 * delta_time
         if pressed[pg.K_w]:
-            camera.y -= camera.width * 0.5 * delta_time
+            camera_pos[1] += 3.0 * delta_time
         if pressed[pg.K_s]:
-            camera.y += camera.width * 0.5 * delta_time
-        if pressed[pg.K_e]:
-            old_center = camera.center
-            camera.width *= 2 ** delta_time
-            camera.height = camera.width / ASPECT_RATIO
-            camera.center = old_center
-        if pressed[pg.K_q]:
-            old_center = camera.center
-            camera.width *= 0.5 ** delta_time
-            camera.height = camera.width / ASPECT_RATIO
-            camera.center = old_center
+            camera_pos[1] -= 3.0 * delta_time
 
-        if camera.width < 100:
-            old_center = camera.center
-            camera.width = 100
-            camera.height = camera.width / ASPECT_RATIO
-            camera.center = old_center
 
-        if camera.width != camera_surface.get_width():
-            camera_surface = pg.Surface(camera.size)
+        if drag_anchor is not None:
+            mx, my = pg.mouse.get_pos()
+            camera_pos[0] = drag_anchor[0] - ((mx - SCREEN_WIDTH / 2) / WORLD_SCALE)
+            camera_pos[1] = drag_anchor[1] + (my - SCREEN_HEIGHT / 2) / WORLD_SCALE
 
-        camera_surface.blit(world_surface, (-camera.x, -camera.y))
-        c = pg.transform.scale(camera_surface, screen.get_size())
+        print(camera_pos)
 
-        screen.blit(c, (0, 0))
+
+        screen.blit(world_surface, (0, 0))
 
         fs = f"frame skip {frame_skip}" if frame_by_frame else "realtime"
         debug_messages = \

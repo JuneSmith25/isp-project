@@ -4,7 +4,7 @@ import pygame as pg
 from instruction import Line, CubicBezier, BladeOn, BladeOff, \
     to_json_value, from_json_value
 
-from json import dump, dumps, load, loads
+from json import dump, dumps, load
 from math import tau
 
 from tkinter.filedialog import askopenfilename, asksaveasfilename
@@ -19,6 +19,7 @@ class InstructionBuilderModel:
     def __init__(self):
         self.instructions = []
         self.overlay = None
+        self.overlay_path = None
 
     def receive(self, m):
         end = self.end_point()
@@ -97,30 +98,44 @@ class InstructionBuilderModel:
         obj['blade_radius'] = blade_radius
         obj['sim_length'] = "Indefinite"
         obj['delta_time'] = {"secs": 0, "nanos": 1000000}
+
+        if isinstance(self.overlay_path, str):
+            obj['overlay_path'] = f"\"{self.overlay_path}\""
+        else:
+            obj['overlay_path'] = "null"
+
         obj['instructions'] = [to_json_value(i) for i in self.instructions]
-        obj['dummy'] = 'dummy'
         return obj
 
-    def export_instructions(self):
-        filepath = asksaveasfilename()
-        if not isinstance(filepath, str):
-            return
-        filepath = str(filepath)
+    def export_instructions(self, filepath=None):
+        if filepath is None:
+            filepath = asksaveasfilename()
+            if not isinstance(filepath, str):
+                return
+            filepath = str(filepath)
         obj = self.sim_dict()
         with open(filepath, "w") as f:
             dump(obj, f)
 
-    def import_instructions(self):
-        result = askopenfilename()
-        if not isinstance(result, str):
-            return
-        filepath = str(result)
+    def import_instructions(self, filepath=None):
+        if filepath is None:
+            filepath = askopenfilename()
+            if not isinstance(filepath, str):
+                return
+            filepath = str(filepath)
         with open(filepath, "r") as f:
             obj = dict(load(f))
 
         if "instructions" in obj.keys():
             obj_list = obj["instructions"]
             self.instructions = [from_json_value(o) for o in obj_list]
+
+        if "overlay_path" in obj.keys():
+            overlay_path = obj["instructions"]
+            if overlay_path == 'null':
+                self.overlay_path = None
+            else:
+                self.overlay_path = overlay_path[1:-1]
 
     def run_simulation(self):
         sim_input = dumps(self.sim_dict())
@@ -136,9 +151,11 @@ class InstructionBuilderModel:
     def add_overlay(self):
         if self.overlay is not None:
             self.overlay = None
+            self.overlay_path = None
         else:
             filepath = askopenfilename()
             if not isinstance(filepath, str):
                 return
 
             self.overlay = pg.image.load(filepath)
+            self.overlay_path = filepath
