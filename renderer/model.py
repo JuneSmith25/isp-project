@@ -131,11 +131,12 @@ class InstructionBuilderModel:
             self.instructions = [from_json_value(o) for o in obj_list]
 
         if "overlay_path" in obj.keys():
-            overlay_path = obj["instructions"]
+            overlay_path = obj["overlay_path"]
             if overlay_path == 'null':
                 self.overlay_path = None
             else:
                 self.overlay_path = overlay_path[1:-1]
+                self.overlay = pg.image.load(self.overlay_path)
 
     def run_simulation(self):
         sim_input = dumps(self.sim_dict())

@@ -51,17 +51,24 @@ class SimOutput:
         self.max_motor_speed: float = obj["max_motor_speed"]
         self.blade_radius: float = obj["blade_radius"]
 
+        overlay_path = obj["overlay_path"]
+        if overlay_path == 'null':
+            self.overlay_path = None
+        else:
+            self.overlay_path = overlay_path[1:-1]
 
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 960
+
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 1200
 ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT
 
-WORLD_SCALE = SCREEN_HEIGHT / 10  # pixels per meter
+WORLD_SCALE = SCREEN_HEIGHT / 12  # pixels per meter
 
 WORLD_WIDTH = SCREEN_WIDTH * 5
 WORLD_HEIGHT = WORLD_WIDTH
 
 camera_pos = [0, 0]
+
 
 def screencoords(x, y=None):
     if isinstance(x, tuple) and y is None:
@@ -70,6 +77,7 @@ def screencoords(x, y=None):
     return ((x - camera_pos[0]) * WORLD_SCALE + SCREEN_WIDTH / 2,
             -(y - camera_pos[1]) * WORLD_SCALE + SCREEN_HEIGHT / 2)
 
+
 def worldcoords(x, y=None):
     if isinstance(x, tuple) and y is None:
         return worldcoords(x[0], x[1])
@@ -77,6 +85,7 @@ def worldcoords(x, y=None):
     cam_x, cam_y = camera_pos
     return (((x - SCREEN_WIDTH / 2) / WORLD_SCALE) + camera_pos[0],
             ((y - SCREEN_HEIGHT / 2) / -WORLD_SCALE) + camera_pos[1])
+
 
 if __name__ == '__main__':
 
@@ -94,29 +103,36 @@ if __name__ == '__main__':
     sim_dt = sim_output.delta_time
     states = sim_output.states
     blade_radius = sim_output.blade_radius
-
+    overlay_path = sim_output.overlay_path
+    print(overlay_path)
+    if overlay_path is not None:
+        overlay = pg.transform.smoothscale_by(
+                pg.image.load(overlay_path),
+                WORLD_SCALE / 96.0)
+    else:
+        overlay = None
 
     font = pg.font.Font(pg.font.get_default_font(), floor(SCREEN_HEIGHT / 40))
     robot_sprite_path = f"{dir}/robotDS.png"
     robot_sprite = pg.image.load(robot_sprite_path)
+    ratio = robot_sprite.get_height() / robot_sprite.get_width()
     robot_sprite_size = (sim_output.wheel_distance * WORLD_SCALE,
-                         sim_output.wheel_distance * WORLD_SCALE
-                         * robot_sprite.get_height() / robot_sprite.get_width())
+                         sim_output.wheel_distance * WORLD_SCALE * ratio)
     robot_sprite = pg.transform.smoothscale(robot_sprite, robot_sprite_size)
 
     grass_size = 2
     grass_texture_path = f"{dir}/grass.png"
     grass_texture = pg.image.load(grass_texture_path)
     grass_texture = pg.transform.smoothscale(
-            grass_texture, (WORLD_SCALE * grass_size, WORLD_SCALE * grass_size))
+            grass_texture,
+            (WORLD_SCALE * grass_size, WORLD_SCALE * grass_size))
 
     world_surface = screen
 
     clock = pg.time.Clock()
     world_timer = 0.0
-    frame_by_frame = True
+    frame_by_frame = False
     frame_skip = 1
-
 
     quit = False
     while not quit:
@@ -124,12 +140,15 @@ if __name__ == '__main__':
 
         grass_width = grass_texture.get_width()
         grass_height = grass_texture.get_height()
-        for row in range(-1, ceil(SCREEN_WIDTH / grass_width) + 2):
-            for col in range(-1, ceil(SCREEN_HEIGHT / grass_height) + 2):
+        for row in range(-1, ceil(SCREEN_WIDTH / grass_width) + 8):
+            for col in range(-1, ceil(SCREEN_HEIGHT / grass_height) + 8):
                 ox, oy = screencoords(0, 0)
                 ox, oy = ox % grass_width, oy % grass_height
                 gx, gy = ox + col * grass_width, oy + row * grass_height
                 world_surface.blit(grass_texture, (gx, gy))
+
+        if overlay is not None:
+            world_surface.blit(overlay, screencoords(0, 0))
 
         pressed = pg.key.get_pressed()
 
@@ -143,6 +162,16 @@ if __name__ == '__main__':
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 quit = True
+            if event.type == pg.WINDOWRESIZED:
+                print("resizing not allowed, expect bugs")
+                SCREEN_WIDTH = event.x
+                SCREEN_HEIGHT = event.y
+                ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT
+
+                WORLD_SCALE = SCREEN_HEIGHT / 12  # pixels per meter
+
+                WORLD_WIDTH = SCREEN_WIDTH * 5
+                WORLD_HEIGHT = WORLD_WIDTH
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
                     frame_by_frame = not frame_by_frame
@@ -161,11 +190,12 @@ if __name__ == '__main__':
             if event.type == pg.MOUSEBUTTONUP:
                 drag_anchor = None
 
-        state_index = floor(world_timer / sim_dt)
+        state_index = max(0, floor(world_timer / sim_dt))
 
         debug_messages = []
 
         if state_index < len(states):
+            state: SimState = states[state_index]
             for i in range(state_index):
                 state = states[i]
                 x, y = state.robot_x, state.robot_y
@@ -175,7 +205,6 @@ if __name__ == '__main__':
                                    screencoords(x, y),
                                    blade_radius * WORLD_SCALE)
 
-            state: SimState = states[state_index]
             radians = state.robot_theta
             degrees = radians * 180 / PI
             robot = pg.transform.rotate(robot_sprite, degrees)
@@ -200,25 +229,14 @@ if __name__ == '__main__':
         else:
             frame_by_frame = True
             over_by = state_index - len(states)
+            exit(0)
             world_timer -= (sim_dt * over_by * 1.8)
-
-        if pressed[pg.K_a]:
-            camera_pos[0] -= 3.0 * delta_time
-        if pressed[pg.K_d]:
-            camera_pos[0] += 3.0 * delta_time
-        if pressed[pg.K_w]:
-            camera_pos[1] += 3.0 * delta_time
-        if pressed[pg.K_s]:
-            camera_pos[1] -= 3.0 * delta_time
-
 
         if drag_anchor is not None:
             mx, my = pg.mouse.get_pos()
-            camera_pos[0] = drag_anchor[0] - ((mx - SCREEN_WIDTH / 2) / WORLD_SCALE)
-            camera_pos[1] = drag_anchor[1] + (my - SCREEN_HEIGHT / 2) / WORLD_SCALE
-
-        print(camera_pos)
-
+            ax, ay = drag_anchor
+            camera_pos[0] = ax - ((mx - SCREEN_WIDTH / 2) / WORLD_SCALE)
+            camera_pos[1] = ay + (my - SCREEN_HEIGHT / 2) / WORLD_SCALE
 
         screen.blit(world_surface, (0, 0))
 

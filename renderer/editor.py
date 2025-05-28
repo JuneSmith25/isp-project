@@ -35,7 +35,7 @@ class EditorFrame(ClickableSurface):
         self.point_radius_selected = 0
 
         self.dragging = -1
-        self.camera_pos = (0, 0)  # WORLD COORDINATES
+        self.camera_pos = (3.3, -1.0)  # WORLD COORDINATES
         self.anchor = (0, 0)      # WORLD COORDINATES
 
         self.resize(size)
@@ -204,8 +204,13 @@ class EditorFrame(ClickableSurface):
                            self.line_color_selected,
                            self.screencoords(0, 0),
                            self.point_radius_selected)
-            text = self.font.render("Origin", True, self.fg)
-            self.text_surface.blit(text, self.screencoords(0.15, -0.15))
+            texts = ["(Origin)",
+                     "Click and drag to move the camera",
+                     "Try making a path using the buttons in the top right"]
+            if self.model.overlay is None:
+                for i in range(len(texts)):
+                    t = self.font.render(texts[i], True, self.fg)
+                    self.text_surface.blit(t, self.screencoords(0.15, -i*0.35))
 
         text = self.font.render("Blade ON" if blade_on else "Blade OFF",
                                 True, self.fg)
@@ -223,6 +228,17 @@ class EditorFrame(ClickableSurface):
         self.surface.blit(self.cut_surface, (0, 0))
         self.surface.blit(self.nodes_surface, (0, 0))
         self.surface.blit(self.text_surface, (0, 0))
+
+        count = 0
+        for i in self.model.instructions:
+            count += isinstance(i, Line) or isinstance(i, CubicBezier)
+
+        tutorial = count == 1
+        if tutorial:
+            text = self.font.render("Drag me!", True, self.fg)
+            p = [p + 20 for p in self.screencoords(self.model.end_point())]
+            self.surface.blit(text, p)
+
         return self.surface
 
     def on_click(self, pos: tuple[int, int], button: int):
