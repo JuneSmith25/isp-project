@@ -23,7 +23,7 @@ class Root(ClickableSurface):
             (0, 0)))
 
         self.top_right_buttons: list[Child] = [
-                button(trb_size, "Pop instruction", message.PopInstruction),
+                button(trb_size, "Undo", message.PopInstruction),
                 button(trb_size, "Line", message.AddLine),
                 button(trb_size, "Curve", message.AddCurve),
                 button(trb_size, "Blade off", message.BladeOff),

@@ -59,7 +59,7 @@ class SimOutput:
 
 
 SCREEN_WIDTH = 1600
-SCREEN_HEIGHT = 1200
+SCREEN_HEIGHT = 900
 ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT
 
 WORLD_SCALE = SCREEN_HEIGHT / 12  # pixels per meter
@@ -144,7 +144,7 @@ if __name__ == '__main__':
             for col in range(-1, ceil(SCREEN_HEIGHT / grass_height) + 8):
                 ox, oy = screencoords(0, 0)
                 ox, oy = ox % grass_width, oy % grass_height
-                gx, gy = ox + col * grass_width, oy + row * grass_height
+                gx, gy = ox + col * (grass_width - 1), oy + row * (grass_height - 1)
                 world_surface.blit(grass_texture, (gx, gy))
 
         if overlay is not None:
@@ -227,10 +227,10 @@ if __name__ == '__main__':
                                  line.width)
             debug_messages += debug.messages
         else:
-            frame_by_frame = True
+            # frame_by_frame = True
             over_by = state_index - len(states)
-            exit(0)
-            world_timer -= (sim_dt * over_by * 1.8)
+            # world_timer -= (sim_dt * over_by * 1.8)
+            world_timer = 0
 
         if drag_anchor is not None:
             mx, my = pg.mouse.get_pos()
